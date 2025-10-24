@@ -15,10 +15,10 @@ import nest_asyncio
 # ========== KONFIGURASI ==========
 EMAIL_KAMU = os.getenv("EMAIL_KAMU")
 PASSWORD_APLIKASI = os.getenv("PASSWORD_APLIKASI")
-PENERIMA = os.getenv("PENERIMA", "support@whatsapp.com")
+PENERIMA = os.getenv("PENERIMA")
 EMAIL_ADMIN = os.getenv("EMAIL_ADMIN")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "8041562620").split(",")]
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
 ALLOWED_USERS = set(ADMIN_IDS)
 LOG_FILE = "bot_log.txt"
 # =================================
@@ -70,7 +70,7 @@ def cek_izin(func):
 async def banding(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not context.args:
-        await update.message.reply_text("Gunakan format:\n/banding +628XXXXXXXXXX")
+        await update.message.reply_text("Gunakan format:\n/b +628XXX")
         return
 
     nomor = context.args[0]
@@ -89,7 +89,7 @@ async def banding(update: Update, context: ContextTypes.DEFAULT_TYPE):
             server.send_message(msg)
             server.quit()
 
-            await update.message.reply_text(f"✅ Email banding untuk {nomor} sudah dikirim bos! 🚀")
+            await update.message.reply_text(f"✅ Email banding untuk {nomor} sudah dikirim bos! 💥✅")
             tulis_log(f"USER {user_id} kirim banding untuk {nomor} ✅")
 
             # Kirim laporan ke admin
@@ -115,7 +115,7 @@ async def banding(update: Update, context: ContextTypes.DEFAULT_TYPE):
     asyncio.create_task(kirim_email())
 
 
-# ======== MENU START ========
+# ======== MENU START INTERAKTIF ========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -126,16 +126,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardButton("👤 Hubungi Admin", callback_data="hub_admin"),
             ]
         ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "LANGSUNG GAS 🚀\n\nPilih menu di bawah ini:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "**Bot Banding WhatsApp**\n\n"
+            "Pilih menu di bawah ini:",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
         )
         tulis_log(f"USER {user_id} buka menu start (authorized)")
     else:
-        keyboard = [[InlineKeyboardButton("👤 Hubungi Admin", callback_data="hub_admin")]]
+        keyboard = [
+            [InlineKeyboardButton("👤 Hubungi Admin", callback_data="hub_admin")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "🚫 Kamu belum punya akses.\nSilakan hubungi admin untuk izin.",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "🚫 Akses ditolak.\n\n"
+            "Kamu belum memiliki izin menggunakan bot ini.\n"
+            "Silakan hubungi admin untuk mendapatkan akses.",
+            reply_markup=reply_markup,
         )
         tulis_log(f"USER {user_id} buka menu start (unauthorized)")
 
@@ -161,6 +169,7 @@ async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Gunakan format: /adduser <id_telegram>")
         return
+
     try:
         user_id = int(context.args[0])
         ALLOWED_USERS.add(user_id)
@@ -175,6 +184,7 @@ async def del_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Gunakan format: /deluser <id_telegram>")
         return
+
     try:
         user_id = int(context.args[0])
         if user_id in ADMIN_IDS:
